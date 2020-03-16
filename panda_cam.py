@@ -67,15 +67,17 @@ class PandaCamSim(object):
     self.t += 1./60.
     pos = [self.offset[0]+0.2 * math.sin(1.5 * t), self.offset[1]+.044+0.5, self.offset[2]+-0.6 + 0.1 * math.cos(1.5 * t)]
     orn = self.bullet_client.getQuaternionFromEuler([math.pi/2.,0.,0.])
-    
     jointPoses = self.bullet_client.calculateInverseKinematics(self.panda,pandaEndEffectorIndex, pos, orn, ll, ul,
       jr, rp, maxNumIterations=5)
     for i in range(pandaNumDofs):
         self.bullet_client.setJointMotorControl2(self.panda, i, self.bullet_client.POSITION_CONTROL, jointPoses[i],force=5 * 240.)
 
     #Set up Camera view
-    endPos, linkWorldOrientation,localInertialFramePosition, localInertialFrameOrientation,worldLinkFramePosition, worldLinkFrameOrientation= self.bullet_client.getLinkState(self.panda, 7)
-    viewMatrix = self.bullet_client.computeViewMatrix(cameraEyePosition=np.array(endPos)+np.array([0,-0.1,0]), cameraTargetPosition=np.array(endPos)+np.array([0,-0.5,0]), cameraUpVector = self.camUpVector)
+    endPos, endOrn,localInertialFramePosition, localInertialFrameOrientation,worldLinkFramePosition, worldLinkFrameOrientation= self.bullet_client.getLinkState(self.panda, 7)
+    rotMat = np.array(self.bullet_client.getMatrixFromQuaternion(endOrn)).reshape((3,3))
+    camPos = np.array(endPos)+np.dot(rotMat,np.array([0,0.,.1])) 
+    targetPos = np.array(endPos)+np.dot(rotMat, np.array([0,0,0.5]))
+    viewMatrix = self.bullet_client.computeViewMatrix(cameraEyePosition=camPos, cameraTargetPosition=targetPos, cameraUpVector = self.camUpVector)
     width, height, rgbImg, depthImg, segImg = self.bullet_client.getCameraImage(width=224, height=224, viewMatrix=viewMatrix,projectionMatrix=self.projMat)
     pass
   
