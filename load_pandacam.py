@@ -5,16 +5,20 @@ import time
 import numpy as np
 import panda_cam
 
-p.connect(p.GUI)
-p.configureDebugVisualizer(p.COV_ENABLE_Y_AXIS_UP,1)
-p.setAdditionalSearchPath(pd.getDataPath())
 
+def move_circle(t, offset, robot):
+    pos = [offset[0]+0.2 * math.sin(1.5 * t), offset[1]+.044+0.5, offset[2]+-0.6 + 0.1 * math.cos(1.5 * t)]
+    orn = robot.bullet_client.getQuaternionFromEuler([math.pi/2.,0.,0.])
+    return pos, orn
+
+# Set up Frank Robot Env
 timeStep=1./60.
-p.setTimeStep(timeStep)
-p.setGravity(0,-9.8,0)
- 
-panda = panda_cam.PandaCamSim(p,[0,0,0])
+offset = [0.,0.,0.]
+panda = panda_cam.PandaCamSim(render=True, ts=timeStep,offset=offset)
+t = 0.
+
 while (1):
-	panda.step()
-	p.stepSimulation()
-	time.sleep(timeStep)
+    t += timeStep
+    pos, orn = move_circle(t,offset,panda)
+    panda.step(pos, orn)
+    time.sleep(timeStep)
